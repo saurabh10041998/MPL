@@ -1,0 +1,96 @@
+section .data
+
+menu : db "1.Copy the content of file " ,0x0A
+len : equ $-menu
+
+fname1 : db 'name.txt',0			;0 helps to find the file 
+fname2 : db 'sample.txt',0
+warn: db "Sorry file can't be opened",0x0A
+len : equ $-warn
+
+
+section .bss
+fd_in1 : resb 8
+fd_in2 : resb 8
+fd_in3 : resb 8
+buffer : resb 100
+len1 : resb 8
+	%macro scall 4
+	mov rax,%1
+	mov rdi,%2
+	mov rsi,%3
+	mov rdx,%4
+	syscall
+	%endmacro
+choice:resb 2
+
+
+section .text
+global main
+main:
+
+	scall 1,1,menu,len
+	scall 0,1,choice,2
+	cmp byte[choice],'1'
+	je copy
+	
+
+
+
+
+
+
+;***************COPY  THE FILE******************
+copy:
+	; open one file...
+	mov rax,2       
+	mov rdi,fname1 
+	mov rsi,2       
+	mov rdx,0777    .
+	syscall
+	
+	;rax return the file descriptor
+	mov qword[fd_in1],rax
+	BT rax,63
+	jnc down
+	scall 1,1,warn,len
+	jmp exit
+down:
+	mov rax,0
+	mov rdi,[fd_in]
+	mov rsi,buffer
+	mov rdx,100
+	syscall
+	
+	mov qword[len1],rax
+	
+	;open the second file...
+	mov rax,2       
+	mov rdi,fname2 
+	mov rsi,2       
+	mov rdx,0777    .
+	syscall
+	;rax return the file descriptor
+	mov qword[fd_in2],rax
+	BT rax,63
+	jnc down1
+	scall 1,1,warn,len1
+	jmp exit
+down1:
+	mov rax,1
+	mov rdi,[fd_in2]
+	mov rsi,buffer
+	mov rdx,[len1]
+	syscall
+	
+	
+	
+
+;*************CLOSE THE FILE **********************	
+	mov rax,3
+	mov rdi,[fd_in]
+
+exit:
+	mov rax,60
+	mov rdi,0
+	syscall	
